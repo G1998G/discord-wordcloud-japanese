@@ -224,8 +224,7 @@ class Setjanome:
         self.stopwordslist = ['する']
         if stopwords:
             stopwords.extend(self.stopwordslist)
-        self.char_filters = [UnicodeNormalizeCharFilter(), EmojiCharFilter(emojidict),
-        self.char_filters = [UnicodeNormalizeCharFilter(), EmojiCharFilter(emojidict),RegexReplaceCharFilter(r"https?://[\w!\?/\+\-_~=;\.,\*&@#\$%\(\)'\[\]]+|<[:@#]|>|\^[!-/:-@¥[-`\[\]{-~]*$",'')]
+        self.char_filters = [ EmojiCharFilter(emojidict),RegexReplaceCharFilter(r"https?://[\w!\?/\+\-_~=;\.,\*&@#\$%\(\)'\[\]]+|<[:@#]|>|\^[!-/:-@¥[-`\[\]{-~]*$",'')]
         self.wordclass2 = ['自立','サ変接続','一般','固有名詞']
         self.token_filters = [POSKeepFilter(['名詞','形容詞']), LowerCaseFilter()]
 
