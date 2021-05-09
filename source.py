@@ -8,7 +8,7 @@ from networkx import isolates
 import numpy as np
 from janome.tokenizer import Tokenizer
 from janome.analyzer import Analyzer
-from janome.charfilter import  RegexReplaceCharFilter,CharFilter
+from janome.charfilter import UnicodeNormalizeCharFilter, RegexReplaceCharFilter,CharFilter
 from janome.tokenfilter import POSKeepFilter,LowerCaseFilter
 from itertools import combinations, dropwhile,chain,permutations
 from collections import Counter
@@ -221,19 +221,19 @@ class Setjanome:
         pass
 
     def wordcloud(self,stopwords,emojidict):
-        self.stopwordslist = ['する','!','=','.','(',')','?','=',':','…',';','...','~']
+        self.stopwordslist = ['する']
         if stopwords:
             stopwords.extend(self.stopwordslist)
         self.char_filters = [UnicodeNormalizeCharFilter(), EmojiCharFilter(emojidict),
-        RegexReplaceCharFilter(r"https?://[\w!\?/\+\-_~=;\.,\*&@#\$%\(\)'\[\]]+|<[:@#]|>",'')]
+        self.char_filters = [UnicodeNormalizeCharFilter(), EmojiCharFilter(emojidict),RegexReplaceCharFilter(r"https?://[\w!\?/\+\-_~=;\.,\*&@#\$%\(\)'\[\]]+|<[:@#]|>|\^[!-/:-@¥[-`\[\]{-~]*$",'')]
         self.wordclass2 = ['自立','サ変接続','一般','固有名詞']
         self.token_filters = [POSKeepFilter(['名詞','形容詞']), LowerCaseFilter()]
 
     def co_net(self,stopwords,emojidict):
-        self.stopwordslist = ['する','!','=','.','(',')','?','=',':','…',';','...','~']
+        self.stopwordslist = ['する']
         if stopwords:
             stopwords.extend(self.stopwordslist)
-        self.char_filters = [EmojiCharFilter(emojidict),RegexReplaceCharFilter(r"https?://[\w!\?/\+\-_~=;\.,\*&@#\$%\(\)'\[\]]+|<[:@#]|>",'')]
+        self.char_filters = [UnicodeNormalizeCharFilter(), EmojiCharFilter(emojidict),RegexReplaceCharFilter(r"https?://[\w!\?/\+\-_~=;\.,\*&@#\$%\(\)'\[\]]+|<[:@#]|>|\^[!-/:-@¥[-`\[\]{-~]*$",'')]
         self.wordclass2 = ['自立','サ変接続','一般','固有名詞']
         self.token_filters = [POSKeepFilter(['名詞','動詞','形容詞']), LowerCaseFilter()]
 
@@ -303,7 +303,7 @@ class Make_WordCloud:
     # ワードクラウド画像作成
     def wordcloud(self):
         if self.wc_dict:
-            W = WordCloud(height = 480, width = 800, font_path='SourceHanSansHW-Regular.otf',background_color="white",color_func=self.wordcolor,mask=np.array(self.mask),prefer_horizontal=1).generate_from_frequencies(self.wc_dict)
+            W = WordCloud(height = 480, width = 800, font_path='SourceHanSansHW-Bold.otf',background_color="white",color_func=self.wordcolor,mask=np.array(self.mask),prefer_horizontal=1).generate_from_frequencies(self.wc_dict)
             plt.figure( figsize=(80,50) )
             plt.imshow(W)
             plt.axis('off')
@@ -436,7 +436,7 @@ class Make_co_net:
                 g.node(bytes)
                 bytes.close()  
             else:
-                g.attr('node', shape='circle',color=str(colorhex),style='filled',fontsize='22',fontpath='SourceHanSansHW-Regular.otf', fixedsize='True',height=str(len(node)/3.3 + 10*rank) )
+                g.attr('node', shape='circle',color=str(colorhex),style='filled',fontsize='22',fontpath='SourceHanSansHW-Bold.otf', fixedsize='True',height=str(len(node)/3.3 + 10*rank) )
                 g.node(node)
         edges = []
         for source in G.edges(data=True):
@@ -559,5 +559,3 @@ async def co(ctx, *args):
 
 # Botの起動とDiscordサーバーへの接続
 bot.run( 'TOKEN')
-
-# 'TOKEN'にdiscord botのTOKEN入れてください。
