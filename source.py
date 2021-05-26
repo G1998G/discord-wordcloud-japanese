@@ -22,6 +22,8 @@ import requests
 from graphviz import Graph
 from PIL import Image,ImageDraw
 import random
+from abc import ABCMeta, abstractmethod
+
 # janomeを起動
 tokenizer = Tokenizer()
 # ギルド内投稿回数カウント用
@@ -34,7 +36,7 @@ class C:
 postc = C()
 
 # コマンドを取得して、何が入力されたか判別
-class Eval_cmd:
+class EvalCmd:
     def __init__(self):
         self.now = datetime.now(timezone.utc)
         self.dt = datetime.now(timezone.utc)
@@ -48,12 +50,11 @@ class Eval_cmd:
             print(f'引数は整数。書き込み取得数→ {countnum}')
             return countnum
 
-    def stopwords(self,arg):
+    def stopword(self,arg):
         if arg.find('-') == 0:
             stopword = arg.replace('-','')
-            self.stopwords.add(stopword)
             print(f'取り除くワード:{stopword}')    
-            return self.stopwords
+            return stopword
 
     def focus(self,arg):
         if arg.find('focus=') == 0:
@@ -92,31 +93,25 @@ class Eval_cmd:
        
 
 # discordタグ抽出用
-class Discordid():
+class DiscordId():
     def __init__(self):
         pass
 
     def check_tag(self,arg):
-        argcheck = re.sub(r"\D|[ -/:-@\[-~]|#|=|@|[^\x01-\x7E]", "", arg)
-        if argcheck:
-            return int(argcheck)
+        self.arg = re.sub(r"\D|[ -/:-@\[-~]|#|=|@|[^\x01-\x7E]", "", arg)
 
-    def textch(self,arg,ctx):
-        arg = self.check_tag(arg)
+    def textch(self,ctx):
         #合致するものがない場合Noneが返される
-        if arg:
-            ch = bot.get_channel(arg)
-            print(f'指定チャンネル判定結果{ch}')
-            if ch:
-                if ch in ctx.guild.text_channels:
-                    return ch
+        ch = bot.get_channel(self.arg)
+        print(f'指定チャンネル判定結果{ch}')
+        if ch:
+            if ch in ctx.guild.text_channels:
+                return ch
 
-    def member(self,arg):
-        arg = self.check_tag(arg)
-        if arg:
-            member = bot.get_user(arg)
-            print(f'指定メンバー判定結果{member}')
-            return member
+    def member(self):
+        member = bot.get_user(self.arg)
+        print(f'指定メンバー判定結果{member}')
+        return member
 
 class SetCmd1:
     def __init__ (self,ctx,*args):
@@ -130,8 +125,8 @@ class SetCmd1:
         self.membername = set()
         self.stopwords = set()
         self.focus = False
-        e = Eval_cmd()
-        d = Discordid()
+        e = EvalCmd()
+        d = DiscordId()
         if args:
             n = C() 
             for arg in args:
@@ -143,17 +138,18 @@ class SetCmd1:
                 if time:
                     self.time = time
                     self.t_msg = e.timeinfo()
-                stopwords = e.stopwords(arg)
-                if stopwords:
-                    self.stopwords.add(stopwords)
-                textch = d.textch(ctx=ctx,arg=arg)
-                if textch:
-                    self.ch.add( textch )
-                    self.chname.add( textch.name )
-                member = d.member(arg)
-                if member:
-                    self.member.add(member)
-                    self.membername.add(member.name)    
+                stopword = e.stopword(arg)
+                if stopword:
+                    self.stopwords.add(stopword)
+                if d.check_tag(arg):
+                    textch = d.textch(ctx=ctx)
+                    if textch:
+                        self.ch.add( textch )
+                        self.chname.add( textch.name )
+                    member = d.member()
+                    if member:
+                        self.member.add(member)
+                        self.membername.add(member.name)    
                 focus = e.focus(arg)
                 if focus:
                     self.focus = focus
@@ -223,32 +219,20 @@ class EmojiCharFilter(CharFilter):
         return text
 
 # ワードの取得、形態素分析
-class Setjanome:
-    def __init__(self):
+class SetJanome(metaclass = ABCMeta):
+    def __init__(self,msglist):
+        self.msglist = msglist
+
+    @classmethod
+    def pros(self):
         pass
 
-    def wordcloud(self,stopwords=False,emojidict={}):
-        self.stopwordslist = set('する')
-        if stopwords:
-            self.stopwordslist.add(stopwords)
-        self.char_filters = [ EmojiCharFilter(emojidict),RegexReplaceCharFilter(r"https?://[\w!\?/\+\-_~=;\.,\*&@#\$%\(\)'\[\]]+|<[:@#]|>|\^[!-/:-@¥[-`\[\]{-~]*$|[!#$%&'()\*\+\-\.,\/:;<=>?@\[\\\]^_`{|}~]",'')]
-        self.wordclass2 = ['自立','サ変接続','一般','固有名詞']
-        self.token_filters = [POSKeepFilter(['名詞','形容詞']), LowerCaseFilter()]
-
-    def co_net(self,stopwords=False,emojidict={}):
-        self.stopwordslist = set('する')
-        if stopwords:
-            stopwords.extend(self.stopwordslist)
-        self.char_filters = [UnicodeNormalizeCharFilter(), EmojiCharFilter(emojidict),RegexReplaceCharFilter(r"https?://[\w!\?/\+\-_~=;\.,\*&@#\$%\(\)'\[\]]+|<[:@#]|>|\^[!-/:-@¥[-`\[\]{-~]*$|[!#$%&'()\*\+\-\.,\/:;<=>?@\[\\\]^_`{|}~]",'')]
-        self.wordclass2 = ['自立','サ変接続','一般','固有名詞']
-        self.token_filters = [POSKeepFilter(['名詞','動詞','形容詞']), LowerCaseFilter()]
-
-    def getwords (self,msglist):
+    def getwords (self):
         # Janomeアナライザーの設定   
         a = Analyzer(char_filters=self.char_filters, tokenizer=tokenizer, token_filters=self.token_filters)
         # 多次元リスト　メッセージごとのワードリストを内包
         self.wordlistlist = []
-        for msg in msglist:
+        for msg in self.msglist:
             tokens = a.analyze(msg)
             w_list=[]
             # 基本形で取得する.base_formを利用
@@ -263,7 +247,28 @@ class Setjanome:
         if self.wordlistlist:
             return self.wordlistlist
 
-class Make_WordCloud:
+class WCJanome(SetJanome):
+    def pros(self,stopwords=False,emojidict={}):
+        self.stopwordslist = set('する')
+        if stopwords:
+            self.stopwordslist.add(stopwords)
+        self.char_filters = [ EmojiCharFilter(emojidict),RegexReplaceCharFilter(r"https?://[\w!\?/\+\-_~=;\.,\*&@#\$%\(\)'\[\]]+|<[:@#]|>|\^[!-/:-@¥[-`\[\]{-~]*$|[!#$%&'()\*\+\-\.,\/:;<=>?@\[\\\]^_`{|}~]",'')]
+        self.wordclass2 = ['自立','サ変接続','一般','固有名詞']
+        self.token_filters = [POSKeepFilter(['名詞','形容詞']), LowerCaseFilter()]
+        return self.getwords()
+
+class CNJanome(SetJanome):
+    def pros(self,stopwords=False,emojidict={}):
+        self.stopwordslist = set('する')
+        if stopwords:
+            stopwords.extend(self.stopwordslist)
+        self.char_filters = [UnicodeNormalizeCharFilter(), EmojiCharFilter(emojidict),RegexReplaceCharFilter(r"https?://[\w!\?/\+\-_~=;\.,\*&@#\$%\(\)'\[\]]+|<[:@#]|>|\^[!-/:-@¥[-`\[\]{-~]*$|[!#$%&'()\*\+\-\.,\/:;<=>?@\[\\\]^_`{|}~]",'')]
+        self.wordclass2 = ['自立','サ変接続','一般','固有名詞']
+        self.token_filters = [POSKeepFilter(['名詞','動詞','形容詞']), LowerCaseFilter()]               
+        return self.getwords()
+
+
+class MakeWordCloud:
     def __init__(self,wordlistlist,emojidict={}):
         self.wordlistlist = wordlistlist
         self.emojidict = emojidict
@@ -369,7 +374,7 @@ class Make_WordCloud:
         self.pre_img.close()
         return pngimage
 
-class Make_co_net:
+class MakeCoNet:
     # 共起ネットワーク図作成
     def __init__(self,wordlistlist,focus=False,emojidict={},getmsg_count=0):
         self.focus = focus
@@ -531,14 +536,12 @@ async def c(ctx, *args):
 
         getmsg = Getmsg(ch_historylist,cmd.member)
         emojidict =ReplaceEmoji.make_dict(ctx)
-        setjanome = Setjanome()
-        setjanome.wordcloud(cmd.stopwords,emojidict)
-        wordlistlist =setjanome.getwords(getmsg.list)
-
+        res_janome = WCJanome(getmsg.list)
+        wordlistlist = res_janome.pros(cmd.stopwords,emojidict)
         if not wordlistlist:
             await ctx.send(content=f'{",".join(cmd.chname)} の過去{getmsg.allmsg_count}回分の書き込みから{",".join(cmd.membername)}の書き込みを調べたけど、{",".join(cmd.membername)}の書き込みが見つからなかったよ。')
         else:
-            wc = Make_WordCloud(wordlistlist=wordlistlist,emojidict=emojidict)
+            wc = MakeWordCloud(wordlistlist=wordlistlist,emojidict=emojidict)
             graph_res = wc.proc()
             await ctx.send(file=graph_res, content=f' {",".join(cmd.chname)} の過去{getmsg.allmsg_count}回分の書き込みから{",".join(cmd.membername)}の書き込みを調べたよ。書き込み数は{getmsg.count}回だったよ。取り除いたワード:{",".join(cmd.stopwords)}、期間指定：{cmd.t_msg} ※取得期間指定が優先されるよ。' )
         print(f'🟢{postc()}回、投稿完了🟢{datetime.now()}')
@@ -564,14 +567,12 @@ async def n(ctx, *args):
 
         getmsg = Getmsg(ch_historylist,cmd.member)
         emojidict =ReplaceEmoji.make_dict(ctx)
-        setjanome = Setjanome()
-        setjanome.co_net(cmd.stopwords,emojidict)
-        wordlistlist = setjanome.getwords(getmsg.list)  
-
+        res_janome = CNJanome(getmsg.list)
+        wordlistlist = res_janome.pros(cmd.stopwords,emojidict)
         if not wordlistlist:
             await ctx.send(content=f'{",".join(cmd.chname)}の過去{getmsg.allmsg_count}回分の書き込みから{",".join(cmd.membername)}の書き込みを調べたけど、{",".join(cmd.membername)}の書き込みが見つからなかったよ.')
         else:
-            net = Make_co_net(getmsg_count=getmsg.count,focus=cmd.focus,wordlistlist=wordlistlist,emojidict=emojidict)
+            net = MakeCoNet(getmsg_count=getmsg.count,focus=cmd.focus,wordlistlist=wordlistlist,emojidict=emojidict)
             graph_res = net.build_network()
             if graph_res == 'No_dict':
                 await ctx.send( content=f'該当する書き込みから共起ネットワーク図を作れなかったよ。' )
@@ -588,10 +589,10 @@ async def sc(ctx, *args):
     '''
     print(f'🟥{ctx.author.name}がscコマンドを入力しました。🟥{datetime.now()}') 
     print(args)
-    setjanome = Setjanome()
-    setjanome.wordcloud()
-    wordlistlist = setjanome.getwords(args)
-    wc = Make_WordCloud(wordlistlist)
+    emojidict =ReplaceEmoji.make_dict(ctx)
+    res_janome = WCJanome(args)
+    wordlistlist = res_janome.pros(emojidict)
+    wc = MakeWordCloud(wordlistlist)
     graph_res = wc.proc()
     await ctx.send(file=graph_res,content=f'{ctx.author.name}さん提供ソースからワードクラウドを作りました')
     print(f'🟢{postc()}回、投稿完了🟢{datetime.now()}')
@@ -603,13 +604,13 @@ async def sn(ctx, *args):
     '''
     print(f'🟥{ctx.author.name}がsnコマンドを入力しました。🟥{datetime.now()}') 
     print(args)
-    setjanome = Setjanome()
-    setjanome.wordcloud()
-    wordlistlist = setjanome.getwords(args)
-    wn = Make_co_net(wordlistlist=wordlistlist)
+    emojidict =ReplaceEmoji.make_dict(ctx)
+    res_janome = CNJanome(args)
+    wordlistlist = res_janome.pros(emojidict)
+    wn = MakeCoNet(wordlistlist=wordlistlist)
     graph_res = wn.build_network()
     await ctx.send(file=graph_res,content=f'{ctx.author.name}さん提供ソースからワードクラウドを作りました')
     print(f'🟢{postc()}回、投稿完了🟢{datetime.now()}')
 
 # Botの起動とDiscordサーバーへの接続
-bot.run( 'TOKENキー入力')
+bot.run( 'TOKEN')
