@@ -21,8 +21,7 @@ import requests
 from graphviz import Graph
 from PIL import Image,ImageDraw
 import random
-from typing import Optional
-
+from typing import Union
 
 class C:
     def __init__(self):
@@ -36,64 +35,84 @@ class C:
     def initial(ctx):
         return print(f'🟥{ctx.author.name}がcoコマンドを入力しました。🟥{datetime.now()}') 
 
-class SetCmd2:
-    def __init__ (self,ctx,mems,chs,countnum,args):
+class SetCmd1:
+    def __init__ (self,ctx,args):
         self.ctx = ctx
         self.now = datetime.now(timezone.utc)
         self.dt = datetime.now(timezone.utc)
         self.maxnum = 10000
-        self.countnum = countnum
+        self.countnum = 1000
         self.time = False
         self.t_msg = False
-        self.chs = chs or [ctx.channel]
-        self.chnames = [ch.name for ch in chs] or [ctx.channel.name]
-        self.mems = mems
-        self.memnames = [mem.name for mem in mems] or ['bot以外の全員']
+        self.chs = []
+        self.chnames = []
+        self.mems = []
+        self.memnames = []
         self.stopwords = []
         self.focus = False
 
         if args:
             for arg in args:
-                self._stopword(arg)
-                self._focus(arg)
-                self._time(arg)
-                self._allch(arg)
+                if type(arg) is int:
+                    self.countnum = arg    
+                elif type(arg) is discord.Member:
+                    self.mems.append(arg)
+                    self.memnames.append(arg.name)
+                elif type(arg) is discord.TextChannel:
+                    self.chs.append(arg)
+                    self.chnames.append(arg.name)
+                else:
+                    self._stopword(arg)
+                    self._focus(arg)
+                    self._time(arg)
+                    self._allch(arg)
+        
+        if not self.chs and not self.chnames:
+            self.chs.append(ctx.channel)
+            self.chnames.append(ctx.channel.name)
+        if not self.memnames:
+            self.memnames.append('bot以外の全員')
 
         print(f'🟥コマンド入力結果:{vars(self)}🟥')
 
+
     def _stopword(self,arg):
-        if arg.find('-') == 0:
-            stopword = arg.replace('-','')  
-            self.stopword.append(stopword)
+        if type(arg) is str:                
+            if arg.find('rm=') == 0:
+                stopword = arg.replace('-','')  
+                self.stopword.append(stopword)
 
     def _focus(self,arg):
-        if arg.find('focus=') == 0:
-            self.focus = arg.replace('focus=','')
+        if type(arg) is str:  
+            if arg.find('focus=') == 0:
+                self.focus = arg.replace('focus=','')
 
     def _time(self,arg):
-        if arg.find('d=') ==0:
-            self.dt -= timedelta(days=int(arg[2:]))
-        elif arg.find('h=') ==0:
-            self.dt -= timedelta(hours=int(arg[2:]))
-        elif arg.find('m=') ==0:
-            self.dt -= timedelta(minutes=int(arg[2:]))
-        else:
-            return None
-        tlist = ['%Y','%m','%d','%H','%M']
-        dtlist = []
-        for elem in tlist:
-            dtlist.append(self.dt.strftime(elem))
-        self.time = datetime(int(dtlist[0]),int(dtlist[1]),int(dtlist[2]),int(dtlist[3]),int(dtlist[4]), second=0, microsecond=0, tzinfo=None)
-        tdelta = abs(self.now-self.dt)
-        m, s = divmod(tdelta.seconds, 60)
-        h, m = divmod(m, 60)
-        self.t_msg = f'⏰過去{tdelta.days}日{h}時間{m}分の書き込み⏰'
+        if type(arg) is str:  
+            if arg.find('d=') ==0:
+                self.dt -= timedelta(days=int(arg[2:]))
+            elif arg.find('h=') ==0:
+                self.dt -= timedelta(hours=int(arg[2:]))
+            elif arg.find('m=') ==0:
+                self.dt -= timedelta(minutes=int(arg[2:]))
+            else:
+                return None
+            tlist = ['%Y','%m','%d','%H','%M']
+            dtlist = []
+            for elem in tlist:
+                dtlist.append(self.dt.strftime(elem))
+            self.time = datetime(int(dtlist[0]),int(dtlist[1]),int(dtlist[2]),int(dtlist[3]),int(dtlist[4]), second=0, microsecond=0, tzinfo=None)
+            tdelta = abs(self.now-self.dt)
+            m, s = divmod(tdelta.seconds, 60)
+            h, m = divmod(m, 60)
+            self.t_msg = f'⏰過去{tdelta.days}日{h}時間{m}分の書き込み⏰'
 
     def _allch(self,arg):
-        if arg.find('=allch') ==0:
-            for ch in self.ctx.guild.text_channels:
-                print(ch)
-                self.chs.append(ch)
+        if type(arg) is str:
+            if arg.find('=allch') ==0:
+                for ch in self.ctx.guild.text_channels:
+                    print(ch)
+                    self.chs.append(ch)
 
 # コマンドをもとに必要情報の入手　(メッセージ取得、ギルドメンバー取得)
 class Getmsg:
@@ -448,34 +467,35 @@ class WordCloudCommands(commands.Cog):
         self.bot = bot
 
     @commands.command()
-    async def c(self,ctx, mems: Greedy[discord.Member], chs: Greedy[discord.TextChannel],countnum: Optional[int] = 500,*args: Optional[str]):
+    async def c(self,ctx, *args: Union[discord.TextChannel, discord.Member,int,str]):
         '''
         ワードクラウドを生成 ℹ️
         '''
-        C.initial(ctx)        
-        cmd = SetCmd2(ctx,mems=mems,chs=chs,countnum=countnum,args=args)
-        if cmd.countnum > cmd.maxnum or cmd.countnum <= 0:
-            await ctx.send('`収集できる書き込み数は0以上10000以下だよ。正の整数を入力してね。`')        
-        else:
-            ch_historylist = []
-            if cmd.time:
-                for ch in cmd.chs:
-                    ch_historylist.append(await ch.history(limit = None,after = cmd.time).flatten())
-            else :              
-                for ch in cmd.chs:
-                    ch_historylist.append(await ch.history(limit=countnum).flatten())
-
-            getmsg = Getmsg(ch_historylist,cmd.mems)
-            emojidict =ReplaceEmoji.make_dict(ctx)
-            res_janome = WCJanome(getmsg.list)
-            wordlistlist = res_janome.pros(cmd.stopwords,emojidict)
-            print(wordlistlist)
-            if not wordlistlist:
-                await ctx.send(content=f'`{",".join(cmd.chnames)} の過去{getmsg.allmsg_count}回分の書き込みから{",".join(cmd.memnames)}の書き込みを調べたけど、{",".join(cmd.memnames)}の書き込みが見つからなかったよ。`')
+        C.initial(ctx)
+        async with ctx.typing(): # 送られてきたチャンネルで入力中と表示させる        
+            cmd = SetCmd1(ctx,args)
+            if cmd.countnum > cmd.maxnum or cmd.countnum <= 0:
+                await ctx.send('`収集できる書き込み数は0以上10000以下だよ。正の整数を入力してね。`')        
             else:
-                wc = MakeWordCloud(wordlistlist=wordlistlist,emojidict=emojidict)
-                graph_res = wc.proc()
-                await ctx.send(file=graph_res, content=f' `{",".join(cmd.chnames)} の過去{getmsg.allmsg_count}回分の書き込みから{",".join(cmd.memnames)}の書き込みを調べたよ。\n書き込み数:{getmsg.count}回\n取り除いたワード:{",".join(cmd.stopwords)}\n期間指定：{cmd.t_msg} \n※取得期間指定が優先されるよ。`' )
+                ch_historylist = []
+                if cmd.time:
+                    for ch in cmd.chs:
+                        ch_historylist.append(await ch.history(limit = None,after = cmd.time).flatten())
+                else :              
+                    for ch in cmd.chs:
+                        ch_historylist.append(await ch.history(limit=cmd.countnum).flatten())
+
+                getmsg = Getmsg(ch_historylist,cmd.mems)
+                emojidict =ReplaceEmoji.make_dict(ctx)
+                res_janome = WCJanome(getmsg.list)
+                wordlistlist = res_janome.pros(cmd.stopwords,emojidict)
+                print(wordlistlist)
+                if not wordlistlist:
+                    await ctx.send(content=f'`{",".join(cmd.chnames)} の過去{getmsg.allmsg_count}回分の書き込みから{",".join(cmd.memnames)}の書き込みを調べたけど、{",".join(cmd.memnames)}の書き込みが見つからなかったよ。`')
+                else:
+                    wc = MakeWordCloud(wordlistlist=wordlistlist,emojidict=emojidict)
+                    graph_res = wc.proc()
+                    await ctx.send(file=graph_res, content=f' `{",".join(cmd.chnames)} の過去{getmsg.allmsg_count}回分の書き込みから{",".join(cmd.memnames)}の書き込みを調べたよ。\n書き込み数:{getmsg.count}回\n取り除いたワード:{",".join(cmd.stopwords)}\n期間指定：{cmd.t_msg} \n※取得期間指定が優先されるよ。`' )
         postc()
 
     @commands.command()
@@ -485,12 +505,13 @@ class WordCloudCommands(commands.Cog):
         '''
         C.initial(ctx)
         print(args)
-        emojidict =ReplaceEmoji.make_dict(ctx)
-        res_janome = WCJanome(args)
-        wordlistlist = res_janome.pros(emojidict)
-        wc = MakeWordCloud(wordlistlist)
-        graph_res = wc.proc()
-        await ctx.send(file=graph_res,content=f'`{ctx.author.name}さんの書き込みからそのままワードクラウドを作りました`')
+        async with ctx.typing(): # 送られてきたチャンネルで入力中と表示させる
+            emojidict =ReplaceEmoji.make_dict(ctx)
+            res_janome = WCJanome(args)
+            wordlistlist = res_janome.pros(emojidict)
+            wc = MakeWordCloud(wordlistlist)
+            graph_res = wc.proc()
+            await ctx.send(file=graph_res,content=f'`{ctx.author.name}さんの書き込みからそのままワードクラウドを作りました`')
         postc()
 
 
@@ -500,38 +521,40 @@ class CoNetworkCommands(commands.Cog):
         self.bot = bot
 
     @commands.command()
-    async def n(self,ctx, mems: Greedy[discord.Member], chs: Greedy[discord.TextChannel],countnum: Optional[int] = 500,*args: Optional[str]):
+    async def n(self,ctx, *args:Union[discord.TextChannel, discord.Member,int,str]):
         '''
         共起ネットワーク図を生成　ℹ️
         '''
         C.initial(ctx)
-        cmd = SetCmd2(ctx,mems=mems,chs=chs,countnum=countnum,args=args)
-        if cmd.countnum > cmd.maxnum or cmd.countnum <= 0:
-            await ctx.send('`収集できる書き込み数は0以上10000以下だよ。正の整数を入力してね。`')        
-        else:
-            ch_historylist = []
-            if cmd.time:
-                for ch in cmd.chs:
-                    ch_historylist.append(await ch.history(limit = None,after = cmd.time).flatten())
-            else :              
-                for ch in cmd.chs:
-                    ch_historylist.append(await ch.history(limit=countnum).flatten())
-
-            getmsg = Getmsg(ch_historylist,cmd.mems)
-            emojidict =ReplaceEmoji.make_dict(ctx)
-            res_janome = CNJanome(getmsg.list)
-            wordlistlist = res_janome.pros(cmd.stopwords,emojidict)
-            if not wordlistlist:
-                await ctx.send(content=f'`{",".join(cmd.chnames)}の過去{getmsg.allmsg_count}回分の書き込みから{",".join(cmd.memnames)}の書き込みを調べたけど、{",".join(cmd.memnames)}の書き込みが見つからなかったよ.`')
+        print(list(map(lambda x:[type(x),x],args)))
+        async with ctx.typing(): # 送られてきたチャンネルで入力中と表示させる
+            cmd = SetCmd1(ctx,args)
+            if cmd.countnum > cmd.maxnum or cmd.countnum <= 0:
+                await ctx.send('`収集できる書き込み数は0以上10000以下だよ。正の整数を入力してね。`')        
             else:
-                n = MakeCoNet(getmsg_count=getmsg.count,focus=cmd.focus,wordlistlist=wordlistlist,emojidict=emojidict)
-                graph_res = n.makenet()
-                if graph_res == 'No_dict':
-                    await ctx.send( content=f'`該当する書き込みから共起ネットワーク図を作れなかったよ。`' )
-                elif graph_res == 'No_focus':
-                    await ctx.send( content=f'`フォーカスワード:{cmd.focus}で絞り込んだところ、書き込みがゼロになったよ。`' )
+                ch_historylist = []
+                if cmd.time:
+                    for ch in cmd.chs:
+                        ch_historylist.append(await ch.history(limit = None,after = cmd.time).flatten())
+                else :              
+                    for ch in cmd.chs:
+                        ch_historylist.append(await ch.history(limit=cmd.countnum).flatten())
+
+                getmsg = Getmsg(ch_historylist,cmd.mems)
+                emojidict =ReplaceEmoji.make_dict(ctx)
+                res_janome = CNJanome(getmsg.list)
+                wordlistlist = res_janome.pros(cmd.stopwords,emojidict)
+                if not wordlistlist:
+                    await ctx.send(content=f'`{",".join(cmd.chnames)}の過去{getmsg.allmsg_count}回分の書き込みから{",".join(cmd.memnames)}の書き込みを調べたけど、書き込みが見つからなかったよ.`')
                 else:
-                    await ctx.send(file=graph_res, content=f'`{",".join(cmd.chnames)}の過去{getmsg.allmsg_count}回分の書き込みから{"".join(cmd.memnames)}の書き込みを調べたよ。\n取得できた書き込み数:{getmsg.count}回\n取り除いたワード:{",".join(cmd.stopwords)}\n絞り込み:{cmd.focus}\n期間指定{cmd.t_msg} \n※取得期間指定が優先されるよ。`' )
+                    n = MakeCoNet(getmsg_count=getmsg.count,focus=cmd.focus,wordlistlist=wordlistlist,emojidict=emojidict)
+                    graph_res = n.makenet()
+                    if graph_res == 'No_dict':
+                        await ctx.send( content=f'`該当する書き込みから共起ネットワーク図を作れなかったよ。`' )
+                    elif graph_res == 'No_focus':
+                        await ctx.send( content=f'`フォーカスワード:{cmd.focus}で絞り込んだところ、書き込みがゼロになったよ。`' )
+                    else:
+                        await ctx.send(file=graph_res, content=f'`{",".join(cmd.chnames)}の過去{getmsg.allmsg_count}回分の書き込みから{"".join(cmd.memnames)}の書き込みを調べたよ。\n取得できた書き込み数:{getmsg.count}回\n取り除いたワード:{",".join(cmd.stopwords)}\n絞り込み:{cmd.focus}\n期間指定{cmd.t_msg} \n※取得期間指定が優先されるよ。`' )
         postc()
 
     @commands.command()
@@ -540,13 +563,14 @@ class CoNetworkCommands(commands.Cog):
         書き込みそのものからワードクラウドを生成
         '''
         C.initial(ctx)
-        print(args)
-        emojidict =ReplaceEmoji.make_dict(ctx)
-        res_janome = CNJanome(args)
-        wordlistlist = res_janome.pros(emojidict)
-        n = MakeCoNet(wordlistlist)
-        graph_res = n.makenet()
-        await ctx.send(file=graph_res,content=f'`{ctx.author.name}さんの書き込みからそのまま共起ネットワーク図を作りました`')
+        async with ctx.typing(): # 送られてきたチャンネルで入力中と表示させる
+            print(args)
+            emojidict =ReplaceEmoji.make_dict(ctx)
+            res_janome = CNJanome(args)
+            wordlistlist = res_janome.pros(emojidict)
+            n = MakeCoNet(wordlistlist)
+            graph_res = n.makenet()
+            await ctx.send(file=graph_res,content=f'`{ctx.author.name}さんの書き込みからそのまま共起ネットワーク図を作りました`')
         postc()
 
 class OtherCommands(commands.Cog):
@@ -567,7 +591,7 @@ class OtherCommands(commands.Cog):
         embed.add_field(name="d=正の整数", value=f"```例「d=1」:過去24時間の書き込みを取得。\n(h,mと併用可)```")
         embed.add_field(name="h=正の整数", value=f"```例「h=1」:過去1時間の書き込みを取得。\n(d,mと併用可)```")
         embed.add_field(name="m=正の整数", value=f"```例「m=1」:過去1分の書き込みを取得。\n(h,dと併用可)```")
-        embed.add_field(name="-ワード", value=f"```例「-おはよう」:「おはよう」が結果から除外される。\n(複数回指定可)```")
+        embed.add_field(name="rm=ワード", value=f"```例「-おはよう」:「おはよう」が結果から除外される。\n(複数回指定可)```")
         embed.add_field(name="focus=ワード", value=f"```例「focus=おはよう」:「おはよう」と繋がるワードのみネットワーク図として出力される。\n(複数指定不可)```")
         embed.add_field(name="allh=", value=f"```全チャンネルから書き込みを取得。各チャンネルに対して同じ設定が適用される。チャンネル数が多いとエラーになります。\n例: =allh 100 各チャンネルから100回分ずつ書き込み取得```")
         await ctx.send(embed=embed)
@@ -589,7 +613,7 @@ if __name__ == '__main__':
     postc = C()
     intents = discord.Intents.default()
     intents.members = True
-    bot = commands.Bot(command_prefix="?" ,intents=intents,help_command= HelpCommand())
+    bot = commands.Bot(command_prefix=commands.when_mentioned_or("?"),intents=intents,help_command= HelpCommand())
     bot.add_cog(WordCloudCommands(bot=bot))
     bot.add_cog(CoNetworkCommands(bot=bot))
     bot.add_cog(OtherCommands(bot=bot))
