@@ -45,4 +45,4 @@ if __name__ == '__main__':
     @bot.event
     async def on_ready():
         print(f'🟠ログインしました🟠')
-    bot.run( 'ODMwNTQyMDM2MDMzNDcwNTY1.YHIMjA.8oud6IQ7diky1d6HKA_KCdhbD00')
+    bot.run( 'token')
