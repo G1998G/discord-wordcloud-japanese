@@ -173,7 +173,7 @@ class EmojiCountFilter():
         for k in self.emojidict.keys():
             if re.search(k,text):
                 self.emojilist.append(k)
-                #あえてスペースにする。
+                #絵文字は空文にする。
                 text = re.sub(k," ",text)
         return text
 
@@ -250,32 +250,31 @@ class MakeWordCloud:
     def proc(self):
         # 多次元リストのwordlistlistを平坦化
         w_list = chain.from_iterable(self.wordlistlist)
-        # Counterを使用して頻出単語順でソート。70単語までに限定する。
-        # wordcloud.pyのmaxwordを使わずここでやる理由は、wordcloud.pyに渡す辞書に絵文字が含まれていない為.
+        # emoji_list と w_listを合体。
+        w_list = w_list.extend(self.emojilist)
+        # Counterを使用して頻出単語順でソート。絵文字含めて50単語までに限定する。
         w_count = Counter(w_list)
         self.w_count_dict  = dict(w_count.most_common(50))
-        e_count = Counter(self.emojilist)
-        e_count_dict = dict(e_count.most_common(4))
         print(self.w_count_dict)
 
         self.emoji_xy = {}
-        if e_count_dict:
+        if self.emojilist:
             # マスク画像の作成
             self.base_img = Image.new('RGB', (800, 500), (128, 128, 128))
             draw = ImageDraw.Draw(self.base_img)
            
-            for k,c in e_count_dict.items():
+            for emoji in self.emojilist:
                 # 絵文字サイズを絵文字出現回数で決める
-                # 160を最大サイズとする
-                maxsize = 100
-                left_x,left_y = random.randint(0,800-maxsize),random.randint(0,500-maxsize)
-                right_x,right_y = left_x+min(c*60,maxsize),left_y+min(c*60,maxsize)
+                # 160をサイズとする
+                size = 100
+                left_x,left_y = random.randint(0,800-size),random.randint(0,500-size)
+                right_x,right_y = left_x+min(c*60,size),left_y+min(c*60,size)
                 # [左上のx座標, 左上のy座標, 右下のx座標, 右下のy座標]
                 xylist = [left_x,left_y,right_x,right_y]
                 # 絵文字スペースを白色で描写
                 draw.rectangle(xylist, fill=(255,255,255))
                 # emoji_xy辞書に情報追加
-                url = self.emojidict[k]
+                url = self.emojidict[emoji]
                 self.emoji_xy[url] = xylist
             if self.w_count_dict:
                 print('絵文字ありワードあり')
