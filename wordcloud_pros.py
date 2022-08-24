@@ -264,7 +264,7 @@ class MakeWordCloud:
             draw = ImageDraw.Draw(self.base_img)
             #重複する絵文字を集合にする
             emoji_set = set(self.emojilist)
-            #絵文字抜きのw_count_dictを作成する
+            #絵文字抜きのw_count_dictを作成する。for文で回している最中に変更できないため
             w_count_dict_without_emoji = self.w_count_dict
             
            
@@ -282,8 +282,11 @@ class MakeWordCloud:
                     # emoji_xy辞書に情報追加
                     url = self.emojidict[emoji]
                     self.emoji_xy[url] = xylist
-                    #w_count_dict_without_emojiから絵文字を削除
+                    # w_count_dict_without_emojiから絵文字を削除
                     del w_count_dict_without_emoj[key]
+                    
+            # wordcloud.pyに渡されるのはself.w_count_dictなので、self.w_count_dictにする。
+            self.w_count_dict = w_count_dict_without_emoji
                     
             if self.w_count_dict:
                 print('絵文字ありワードあり')
