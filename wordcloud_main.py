@@ -1,6 +1,6 @@
 from discord.ext import commands
 import discord
-
+import asyncio
 class HelpCommand(commands.HelpCommand):
     def __init__(self):
         super().__init__()
@@ -26,7 +26,7 @@ class HelpCommand(commands.HelpCommand):
             for command in command_list:
                 content += f"{self.context.prefix}{command.name}  `{command.help}`\n"
             content += "\n"
-        content += f"`ℹ️マークのついているコマンドは豊富なオプションがあります。`\n スラッシュコマンドにも対応しています"
+        content += f"`ℹ️マークのついているコマンドは豊富なオプションがあります。"
         embed = discord.Embed(title="**コマンドリスト**",description=content,color=discord.Colour.dark_orange())
         await self.get_destination().send(embed=embed)
 
@@ -37,7 +37,7 @@ async def main(bot):
     @bot.event
     async def on_ready():
         print(f'🟠ログインしました🟠')
-    await bot.start( 'token')
+    await bot.start( 'TOKEN')
     
 if __name__ == '__main__':
     intents = discord.Intents.all()

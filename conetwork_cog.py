@@ -17,10 +17,10 @@ class CoNetworkCommands(commands.Cog):
             ch_historylist = []
             if cmd.time:
                 for ch in cmd.chs:
-                    ch_historylist.append(await ch.history(limit = None,after = cmd.time).flatten())
+                    ch_historylist.append([message async for message in ch.history(limit = None,after = cmd.time)])
             else :              
                 for ch in cmd.chs:
-                    ch_historylist.append(await ch.history(limit=cmd.countnum).flatten())
+                    ch_historylist.append([message async for message in ch.history(limit = None,after = cmd.time)])
 
             getmsg = pros.Getmsg(ch_historylist,cmd.mems)
             emojidict =pros.ReplaceEmoji.make_dict(ctx)
@@ -36,7 +36,7 @@ class CoNetworkCommands(commands.Cog):
                 elif graph_res == 'No_focus':
                     await ctx.send( content=f'`フォーカスワード:{cmd.focus}で絞り込んだところ、書き込みがゼロになったよ。`' )
                 else:
-                    await ctx.send(file=graph_res, content=f'`{",".join(cmd.chnames)}の過去{getmsg.allmsg_count}回分の書き込みから{"".join(cmd.memnames)}の書き込みを調べたよ。\n取得できた書き込み数:{getmsg.count}回\n取り除いたワード:{",".join(cmd.stopwords)}\n絞り込み:{cmd.focus}\n期間指定{cmd.t_msg} \n※取得期間指定が優先されるよ。`' )
+                    await ctx.send(file=graph_res, content=f'```{",".join(cmd.chnames)}の過去{getmsg.allmsg_count}回分の書き込みから{"".join(cmd.memnames)}の書き込みを調べたよ。\n取得できた書き込み数:{getmsg.count}回\n取り除いたワード:{",".join(cmd.stopwords)}\n絞り込み:{cmd.focus}\n期間指定{cmd.t_msg} \n※取得期間指定が優先されるよ。```' )
             pros.postc()
             return
     

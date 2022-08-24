@@ -224,7 +224,7 @@ class WCJanome(SetJanome):
         self.stopwordslist = ['する']
         if self.stopwords:
             self.stopwords.extend(self.stopwordslist)
-        self.char_filters = [ UnicodeNormalizeCharFilter(),RegexReplaceCharFilter(r"https?://[\w!\?/\+\-_~=;\.,\*&@#\$%\(\)'\[\]]|[!#$%&'()\*\+\-\.,\/:;<=>?@\[\\\]^_`{|}~]",''),NeologdnCharFilter()]
+        self.char_filters = [ UnicodeNormalizeCharFilter(),RegexReplaceCharFilter(r"https?://[\w!\?/\+\-_~=;\.,\*&@#\$%\(\)'\[\]]+",''),NeologdnCharFilter()]
         self.wordclass2 = ['自立','サ変接続','一般','固有名詞']
         self.token_filters = [POSKeepFilter(['名詞','形容詞']), LowerCaseFilter()]
         return self.getwords()
@@ -234,7 +234,7 @@ class CNJanome(SetJanome):
         self.stopwordslist = ['する']
         if self.stopwords:
             self.stopwords.extend(self.stopwordslist)
-        self.char_filters = [UnicodeNormalizeCharFilter(),RegexReplaceCharFilter(r"https?://[\w!\?/\+\-_~=;\.,\*&@#\$%\(\)'\[\]]|[!#$%&'()\*\+\-\.,\/:;<=>?@\[\\\]^_`{|}~]",''),NeologdnCharFilter()]
+        self.char_filters = [UnicodeNormalizeCharFilter(),RegexReplaceCharFilter(r"https?://[\w!\?/\+\-_~=;\.,\*&@#\$%\(\)'\[\]]+",''),NeologdnCharFilter()]
         self.wordclass2 = ['自立','サ変接続','一般','固有名詞']
         self.token_filters = [POSKeepFilter(['名詞','動詞','形容詞']), LowerCaseFilter()]               
         return self.getwords()
@@ -249,9 +249,10 @@ class MakeWordCloud:
     #ワードクラウド前処理
     def proc(self):
         # 多次元リストのwordlistlistを平坦化
-        w_list = chain.from_iterable(self.wordlistlist)
+        w_list = list(chain.from_iterable(self.wordlistlist) )
         # emoji_list と w_listを合体。
-        w_list = w_list.extend(self.emojilist)
+        w_list = list(chain(self.emojilist,w_list) )
+        print(f'✨{w_list}')
         # Counterを使用して頻出単語順でソート。絵文字含めて50単語までに限定する。
         w_count = Counter(w_list)
         self.w_count_dict  = dict(w_count.most_common(50))
@@ -264,29 +265,29 @@ class MakeWordCloud:
             draw = ImageDraw.Draw(self.base_img)
             #重複する絵文字を集合にする
             emoji_set = set(self.emojilist)
-            #絵文字抜きのw_count_dictを作成する。for文で回している最中に変更できないため
-            w_count_dict_without_emoji = self.w_count_dict
+
             
            
             for key,value in self.w_count_dict.items():
                 # 絵文字サイズを絵文字出現回数で決める
-                if value in emoji_set:
+                if key in emoji_set:
                     # 絵文字サイズ
-                    size = 100*( 1+(key*0.01) )
+                    size = 100*( 1+(value*0.01) )
                     left_x,left_y = random.randint(0,800-size),random.randint(0,500-size)
-                    right_x,right_y = left_x+min(c*60,size),left_y+min(c*60,size)
+                    right_x,right_y = left_x+min(60,size),left_y+min(60,size)
                     # [左上のx座標, 左上のy座標, 右下のx座標, 右下のy座標]
                     xylist = [left_x,left_y,right_x,right_y]
                     # 絵文字スペースを白色で描写
                     draw.rectangle(xylist, fill=(255,255,255))
                     # emoji_xy辞書に情報追加
-                    url = self.emojidict[emoji]
+                    url = self.emojidict[key]
                     self.emoji_xy[url] = xylist
-                    # w_count_dict_without_emojiから絵文字を削除
-                    del w_count_dict_without_emoj[key]
-                    
-            # wordcloud.pyに渡されるのはself.w_count_dictなので、self.w_count_dictにする。
-            self.w_count_dict = w_count_dict_without_emoji
+            #w_count_dictから絵文字を削除する。
+            for key in list(self.w_count_dict.keys() ):
+                # 絵文字サイズを絵文字出現回数で決める
+                if key in emoji_set:
+                    del self.w_count_dict[key]
+
                     
             if self.w_count_dict:
                 print('絵文字ありワードあり')
