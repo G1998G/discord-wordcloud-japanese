@@ -43,7 +43,6 @@ class WordCloudCommands(commands.Cog):
         ワードクラウドを生成 ℹ️
         '''
         pros.C.initial(ctx)
-        print(list(map(lambda x:type(x),args)))
         async with ctx.typing(): # 送られてきたチャンネルで入力中と表示させる        
             await self.pros_c(ctx,args)
     
@@ -63,7 +62,6 @@ class WordCloudCommands(commands.Cog):
         書き込みそのものからワードクラウドを生成
         '''
         pros.C.initial(ctx)
-        
         async with ctx.typing(): # 送られてきたチャンネルで入力中と表示させる
             await self.pros_dc(self,ctx,*args)
 

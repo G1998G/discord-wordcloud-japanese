@@ -35,6 +35,7 @@ class C:
     def initial(ctx):
         return print(f'🟥{ctx.author.name}がcoコマンドを入力しました。🟥{datetime.now()}') 
 postc = C()
+
 class SetCmd1:
     def __init__ (self,ctx,args):
         self.ctx = ctx
@@ -270,7 +271,7 @@ class MakeWordCloud:
                 # 絵文字サイズを絵文字出現回数で決める
                 if key in emoji_set:
                     # 絵文字サイズ
-                    size = 100*( 1+(value*0.01) )
+                    size = 100*( 1+((value^2)*0.01) )
                     left_x,left_y = random.randint(0,800-size),random.randint(0,500-size)
                     right_x,right_y = left_x+min(60,size),left_y+min(60,size)
                     # [左上のx座標, 左上のy座標, 右下のx座標, 右下のy座標]
@@ -288,17 +289,12 @@ class MakeWordCloud:
 
                     
             if self.w_count_dict:
-                print('絵文字ありワードあり')
+                print('ワードあり')
                 return self.wordcloud()
             else:
                 print('絵文字のみあり')
                 self.pre_img = self.base_img
                 return self.with_emoji_postproc()
-        
-        elif self.w_count_dict.items():
-            print('絵文字なしワードあり')
-            self.base_img = Image.new('RGB', (800, 500), (128,128,128) )
-            return self.wordcloud()
         else:
             return False
 
