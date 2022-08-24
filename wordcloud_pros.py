@@ -266,8 +266,9 @@ class MakeWordCloud:
             for k,c in e_count_dict.items():
                 # 絵文字サイズを絵文字出現回数で決める
                 # 160を最大サイズとする
-                left_x,left_y = random.randint(0,800-160),random.randint(0,500-160)
-                right_x,right_y = left_x+min(c*60,160),left_y+min(c*60,160)
+                maxsize = 100
+                left_x,left_y = random.randint(0,800-maxsize),random.randint(0,500-maxsize)
+                right_x,right_y = left_x+min(c*60,maxsize),left_y+min(c*60,maxsize)
                 # [左上のx座標, 左上のy座標, 右下のx座標, 右下のy座標]
                 xylist = [left_x,left_y,right_x,right_y]
                 # 絵文字スペースを白色で描写
@@ -302,7 +303,7 @@ class MakeWordCloud:
         #color_func=self.wordcolor,
         #font_path='SourceHanSansHW-Regular.otf',
 
-        W = WordCloud(height = 480, width = 800,min_font_size=20,font_path="/Users/itogo/Library/Fonts/SourceHanSansHW-Regular.otf",background_color="white",mask=np.array(self.base_img),prefer_horizontal=1).generate_from_frequencies(self.w_count_dict)
+        W = WordCloud(height = 480, width = 800,min_font_size=20,font_path="/Users/G1998G/Library/Fonts/SourceHanSansHW-Regular.otf",background_color="white",mask=np.array(self.base_img),prefer_horizontal=1).generate_from_frequencies(self.w_count_dict)
         plt.figure( figsize=(80,50) )
         plt.imshow(W)
         plt.axis('off')
