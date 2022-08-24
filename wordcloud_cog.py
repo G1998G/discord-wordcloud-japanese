@@ -1,4 +1,4 @@
-import wordcloud_pros as pros
+import discord_wordcloud_pros as pros
 from discord.ext import commands
 import discord
 from typing import Union
