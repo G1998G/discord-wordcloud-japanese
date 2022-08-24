@@ -1,8 +1,6 @@
 from discord.ext import commands
 import discord
 
-from discord_slash import SlashCommand
-
 class HelpCommand(commands.HelpCommand):
     def __init__(self):
         super().__init__()
@@ -32,17 +30,18 @@ class HelpCommand(commands.HelpCommand):
         embed = discord.Embed(title="**コマンドリスト**",description=content,color=discord.Colour.dark_orange())
         await self.get_destination().send(embed=embed)
 
-
-if __name__ == '__main__':
     
-    intents = discord.Intents.all()
-    intents.members = True
-    bot = commands.Bot(command_prefix=commands.when_mentioned_or("?"),intents=intents,help_command= HelpCommand())
-    slash = SlashCommand(bot,sync_commands=True, sync_on_cog_reload=True)
-    bot.load_extension("conetwork_cog")
-    bot.load_extension("wordcloud_cog")  
-    bot.load_extension("option_cog")
+async def main(bot):
+    await bot.load_extension("conetwork_cog")
+    await bot.load_extension("wordcloud_cog")  
+    await bot.load_extension("option_cog")
     @bot.event
     async def on_ready():
         print(f'🟠ログインしました🟠')
-    bot.run( 'token')
+    await bot.start( 'token')
+    
+if __name__ == '__main__':
+    intents = discord.Intents.all()
+    intents.members = True
+    bot = commands.Bot(command_prefix=commands.when_mentioned_or("?"),intents=intents,help_command= HelpCommand())
+    asyncio.run(main(bot))
