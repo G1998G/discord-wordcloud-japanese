@@ -262,8 +262,10 @@ class MakeWordCloud:
             # マスク画像の作成
             self.base_img = Image.new('RGB', (800, 500), (128, 128, 128))
             draw = ImageDraw.Draw(self.base_img)
+            #重複する絵文字を集合にする
+            emoji_set = set(self.emojilist)
            
-            for emoji in self.emojilist:
+            for emoji in emojiset:
                 # 絵文字サイズを絵文字出現回数で決める
                 # 160をサイズとする
                 size = 100
