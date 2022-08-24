@@ -265,7 +265,7 @@ class MakeWordCloud:
             #重複する絵文字を集合にする
             emoji_set = set(self.emojilist)
            
-            for emoji in emojiset:
+            for emoji in emoji_set:
                 # 絵文字サイズを絵文字出現回数で決める
                 # 160をサイズとする
                 size = 100
