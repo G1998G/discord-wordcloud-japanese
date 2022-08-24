@@ -43,5 +43,5 @@ class OtherCommands(commands.Cog):
         await ctx.send(embed=embed)
         pros.postc()
 
-await def setup(bot):
-    return bot.add_cog(OtherCommands(bot))
+async def setup(bot):
+    await bot.add_cog(OtherCommands(bot))
