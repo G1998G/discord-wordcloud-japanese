@@ -24,7 +24,7 @@ class WordCloudCommands(commands.Cog):
                     ch_historylist.append([message async for message in ch.history(limit=cmd.countnum)])
 
             getmsg = pros.Getmsg(ch_historylist,cmd.mems)
-            emojidict = pros.ReplaceEmoji.make_dict(ctx)
+            emojidict = pros.make_guild_emoji_dict(ctx)
             res_wakame = pros.WCJanome(getmsg.list,emojidict,cmd.stopwords)
             wordlistlist = res_wakame.pros()
             if not wordlistlist:
@@ -49,7 +49,7 @@ class WordCloudCommands(commands.Cog):
     
     async def pros_dc(self,ctx,args):
         print(args)
-        emojidict =pros.ReplaceEmoji.make_dict(ctx)
+        emojidict =pros.make_guild_emoji_dict(ctx)
         res_wakame = pros.WCJanome(args)
         wordlistlist = res_wakame.pros(emojidict=emojidict)
         wc = pros.MakeWordCloud(wordlistlist)

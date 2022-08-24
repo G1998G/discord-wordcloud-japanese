@@ -20,10 +20,10 @@ class CoNetworkCommands(commands.Cog):
                     ch_historylist.append([message async for message in ch.history(limit = None,after = cmd.time)])
             else :              
                 for ch in cmd.chs:
-                    ch_historylist.append([message async for message in ch.history(limit = None,after = cmd.time)])
+                    ch_historylist.append([message async for message in ch.history(limit=cmd.countnum)])
 
             getmsg = pros.Getmsg(ch_historylist,cmd.mems)
-            emojidict =pros.ReplaceEmoji.make_dict(ctx)
+            emojidict =pros.make_guild_emoji_dict(ctx)
             res_janome = pros.CNJanome(getmsg.list,emojidict,cmd.stopwords)
             wordlistlist = res_janome.pros()
             if not wordlistlist:
@@ -54,7 +54,7 @@ class CoNetworkCommands(commands.Cog):
     
     async def pros_dn(self,ctx,*args):
         print(args)
-        emojidict =pros.ReplaceEmoji.make_dict(ctx)
+        emojidict =pros.make_guild_emoji_dict(ctx)
         res_janome = pros.CNJanome(args)
         wordlistlist = res_janome.pros(emojidict=emojidict)
         n = pros.MakeCoNet(wordlistlist)

@@ -152,15 +152,13 @@ class Getmsg:
         print(f'🔻リストアップしたメッセージ数:\n {self.count}')
 
 #　ギルドの絵文字を収集
-class ReplaceEmoji:
-    @staticmethod
-    def make_dict(ctx):
-        emojidict = dict()
-        for elem in ctx.guild.emojis:
-            emojidict[str(elem)] = str(elem.url)
+def make_guild_emoji_dict(ctx):
+    emojidict = dict()
+    for elem in ctx.guild.emojis:
+        emojidict[str(elem)] = str(elem.url)
 
-        print(emojidict)
-        return emojidict
+    print(emojidict)
+    return emojidict
 
 
 # discordユーザー絵文字をそのままjanomeに取り込むと形態素分析で分解されてしまう。janome.CharFilterを継承して工夫する。
