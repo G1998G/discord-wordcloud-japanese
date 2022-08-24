@@ -34,7 +34,6 @@ class HelpCommand(commands.HelpCommand):
 async def main(bot):
     await bot.load_extension("conetwork_cog")
     await bot.load_extension("wordcloud_cog")  
-    await bot.load_extension("option_cog")
     @bot.event
     async def on_ready():
         print(f'🟠ログインしました🟠')
