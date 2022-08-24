@@ -2,8 +2,7 @@ import wordcloud_pros as pros
 from discord.ext import commands
 import discord
 from typing import Union
-from discord_slash import SlashCommand,cog_ext
-from discord_slash.utils.manage_commands import create_option
+
 
 class CoNetworkCommands(commands.Cog):
     def __init__(self, bot):
@@ -52,34 +51,6 @@ class CoNetworkCommands(commands.Cog):
         async with ctx.typing(): # 送られてきたチャンネルで入力中と表示させる
             await self.pros_n(ctx,args)
         
-
-    @cog_ext.cog_slash(name="n", description="共起ネットワーク図を作成",options=[
-        create_option(name="countnum", option_type=4,description="調べる書き込み数",required=False),
-        create_option(name="member", option_type=6,description="メンバー指定",required=False),
-        create_option(name="channel", option_type=7,description="チャンネル指定",required=False),
-        create_option(name="day", option_type=4,description="遡及日",required=False),
-        create_option(name="hour", option_type=4,description="遡及時間",required=False),
-        create_option(name="minute", option_type=4,description="遡及分",required=False),
-        create_option(name="stopword", option_type=3,description="取り除くワード",required=False),
-        create_option(name="focus", option_type=3,description="絞り込むワード",required=False)
-    ])
-    async def n_slash(self,ctx, countnum = 5000, member = None,channel = None,day = None,hour = None,minute = None,stopword =None,focus= None):
-        if day:
-            day = f'd={day}'
-        if hour:
-            hour = f'h={hour}'
-        if minute:
-            minute = f'm={minute}'
-        if stopword:
-            stopword = f'rm={stopword}'
-        if focus:
-            focus = f'focus={focus}'
-        print(vars(ctx))
-        
-        args = (countnum,member,channel,day,hour,minute,stopword,focus)
-        with await ctx.defer():
-            await self.pros_n(ctx,args)
-
     
     async def pros_dn(self,ctx,*args):
         print(args)
@@ -103,10 +74,6 @@ class CoNetworkCommands(commands.Cog):
             await self.pros_dn(self,ctx,*args)
         
 
-    @cog_ext.cog_slash(name="dn",description=f'本文から共起ネットワーク図を生成', options=[
-        create_option(name="args", option_type=3,description="本文を入力",required=True)])
-    async def dc_slash(self,ctx, args):
-        await self.pros_dn(ctx,args)
 
-def setup(bot):
-    return bot.add_cog(CoNetworkCommands(bot))
+async def setup(bot):
+    await bot.add_cog(CoNetworkCommands(bot))
