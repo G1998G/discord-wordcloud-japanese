@@ -2,8 +2,7 @@ import wordcloud_pros as pros
 from discord.ext import commands
 import discord
 from typing import Union
-from discord_slash import SlashCommand,cog_ext
-from discord_slash.utils.manage_commands import create_option
+
 
 class WordCloudCommands(commands.Cog):
     def __init__(self, bot):
@@ -47,32 +46,6 @@ class WordCloudCommands(commands.Cog):
         print(list(map(lambda x:type(x),args)))
         async with ctx.typing(): # 送られてきたチャンネルで入力中と表示させる        
             await self.pros_c(ctx,args)
-
-
-    
-    @cog_ext.cog_slash(name="c",description=f'ワードクラウドを生成', options=[
-        create_option(name="countnum", option_type=4,description="調べる書き込み数",required=False),
-        create_option(name="member", option_type=6,description="メンバー指定",required=False),
-        create_option(name="channel", option_type=7,description="チャンネル指定",required=False),
-        create_option(name="day", option_type=4,description="遡及日",required=False),
-        create_option(name="hour", option_type=4,description="遡及時間",required=False),
-        create_option(name="minute", option_type=4,description="遡及分",required=False),
-        create_option(name="stopword", option_type=3,description="取り除くワード",required=False)
-    ])
-    async def c_slash(self,ctx, countnum = 5000, member = None,channel = None,day = None,hour = None,minute = None,stopword =None):
-        if day:
-            day = f'd={day}'
-        if hour:
-            hour = f'h={hour}'
-        if minute:
-            minute = f'm={minute}'
-        if stopword:
-            stopword = f'rm={stopword}'
-        
-        args = (countnum,member,channel,day,hour,minute,stopword)
-        await ctx.defer()
-        await self.pros_c(ctx,args)
-        
     
     async def pros_dc(self,ctx,args):
         print(args)
@@ -94,13 +67,6 @@ class WordCloudCommands(commands.Cog):
         async with ctx.typing(): # 送られてきたチャンネルで入力中と表示させる
             await self.pros_dc(self,ctx,*args)
 
-
-    @cog_ext.cog_slash(name="dc",description=f'本文からワードクラウドを生成', options=[
-        create_option(name="args", option_type=3,description="本文を入力",required=True)])
-    async def dc_slash(self,ctx, args):
-        await self.pros_dc(ctx,args)
-
-
-def setup(bot):
+async def setup(bot):
     print('ワードクラウドのcogがリロードされました')
-    return bot.add_cog(WordCloudCommands(bot))
+    await bot.add_cog(WordCloudCommands(bot))
