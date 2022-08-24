@@ -151,7 +151,7 @@ class Getmsg:
         print(f'🔻リストアップしたメッセージ:\n {self.list}')
         print(f'🔻リストアップしたメッセージ数:\n {self.count}')
 
-#　janome形態素分析対策。絵文字をランダムに作成した固有名詞に変換
+#　ギルドの絵文字を収集
 class ReplaceEmoji:
     @staticmethod
     def make_dict(ctx):
@@ -173,7 +173,8 @@ class EmojiCountFilter():
         for k in self.emojidict.keys():
             if re.search(k,text):
                 self.emojilist.append(k)
-                text = re.sub(k,"",text)
+                #あえてスペースにする。
+                text = re.sub(k," ",text)
         return text
 
 class NeologdnCharFilter(CharFilter):
